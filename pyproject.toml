@@ -1,0 +1,26 @@
+[project]
+name = "audiogram-object"
+version = "0.1.0"
+description = "The Audiogram as a Python Object - utilities for creating python representations of clinical audiometric data"
+authors = [
+    {name = "Jacob Lucas", email = "jake.lucas.ent@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib (>=3.10.3,<4.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "polars (>=1.39.2,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "audiogram_object", from = "src"}]
+
+
+[tool.poetry.group.dev.dependencies]
+notebook = "^7.4.4"
+ipykernel = "^6.30.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
