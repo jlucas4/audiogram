@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Poetry
+.venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Scratch notebooks and dev files
+notebooks/demo.py
+notebooks/audio_plot.ipynb
+notebooks/audio_plot_v2.ipynb
+notebooks/audiogram.ipynb
+notebooks/object_plot_testing.ipynb
+notebooks/object_testing.ipynb
+notebooks/data/
+
+# macOS
+**/.DS_Store
+
+# Claude Code
+.claude/
+
+# VSCode
+.vscode/
+
+# Logs
+*.log

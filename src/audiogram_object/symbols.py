@@ -11,7 +11,6 @@ import numpy as np
 
 # Public entry points:
 # - get_symbol(...)
-# - get_symbol_path(...)  (back-compat helper)
 # - clear_symbol_caches()
 #
 # Rendering lives in render_mpl.py (matplotlib) and other backends.
@@ -428,22 +427,6 @@ def get_symbol(
 ) -> SymbolComposite:
     return _get_symbol_cached(cfg.geom, kind, ear, masked, nr)
 
-
-def get_symbol_path(
-    *,
-    kind: str,
-    ear: str,
-    masked: bool,
-    nr: bool,
-    cfg: AudiogramRenderConfig = DEFAULT_RENDER_CONFIG,
-) -> SymbolPath:
-    """Backward-compatible helper that returns a single SymbolPath.
-
-    Note: For `nr=True`, this returns ONLY the base glyph (not the arrow). New
-    code should use `get_symbol(...)` and render overlays.
-    """
-    comp = get_symbol(kind=kind, ear=ear, masked=masked, nr=nr, cfg=cfg)
-    return comp.base
 
 
 def clear_symbol_caches() -> None:

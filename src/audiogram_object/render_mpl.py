@@ -450,7 +450,3 @@ def add_bone_symbol(ax, symbol, x, y, *, cfg=DEFAULT_RENDER_CONFIG, color="black
         fill=fill,
         facecolor=facecolor,
     )
-
-
-# Backwards compat for older notebooks
-draw_symbol_cfg = draw_symbol

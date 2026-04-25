@@ -5,7 +5,7 @@ symbol renderer (`render_mpl.py`).
 
 Goals:
 - One canonical "audiogram canvas" (axes setup) with ANSI-like defaults.
-- Named presets ("ansi", "ansi_uhf", "ansi_tiny", ...).
+- Named presets ("ansi", "ehf", "mei", ...).
 - Plot helpers that consume your frozen symbols + render config.
 
 Geometry lives in `symbols.py`. Low-level drawing lives in `render_mpl.py`.
@@ -78,52 +78,55 @@ class AudiogramPlotStyle:
     figsize: tuple[float, float] = (7.5, 5.5)
     color_right: str = "red"
     color_left: str = "blue"
+    color_soundfield: str = "#2ca02c"
+    text_marker_fontsize: float = 15.0
+    text_marker_fontweight: str = "bold"
 
 
 # --- Presets ---
 
-ANSI_BASE = AudiogramAxesConfig()
-
-ANSI_UHF = AudiogramAxesConfig(
-    xlim=(200.0, 20000.0),
-    xticks=(250, 500, 1000, 2000, 4000, 8000, 10000, 12500, 14000, 16000),
-    xtick_labels=("250", "500", "1000", "2000", "4000", "8000", "10000", "12500", "14000", "16000"),
+ANSI_BASE = AudiogramAxesConfig(
+    ylim=(125.0, -10.0),
 )
 
-ANSI_PED = AudiogramAxesConfig(
-    xlim=(110.0, 10000.0),
-    xticks=(125, 250, 500, 1000, 2000, 4000, 8000),
-    xtick_labels=("125", "250", "500", "1000", "2000", "4000", "8000"),
+# Extended high-frequency supplemental panel (8k–20k)
+EHF = AudiogramAxesConfig(
+    xlim=(7000.0, 22000.0),
+    ylim=(125.0, -10.0),
+    xticks=(8000, 10000, 11200, 12500, 14000, 16000, 18000, 20000),
+    xtick_labels=("8000", "10000", "11200", "12500", "14000", "16000", "18000", "20000"),
 )
 
 # Michigan Ear Institute-like canvas: stronger grid, shaded upper band, angled UHF labels
 MEI_BASE = AudiogramAxesConfig(
     xlim=(110.0, 20000.0),
+    ylim=(125.0, -20.0),
     xticks=(125, 250, 500, 1000, 2000, 4000, 8000, 10000, 12500, 14000, 16000),
     xtick_labels=("125", "250", "500", "1000", "2000", "4000", "8000", "10000", "12500", "14000", "16000"),
-    right_y_ticks=True,
-    # light shaded region near the top (normal hearing band)
-    shade_bands=(( -10.0, 25.0, "#dbe9f6", 0.55),),
+    yticks=tuple(range(-20, 121, 10)),
+    right_y_ticks=False,
+    shade_bands=((-10.0, 25.0, "#dbe9f6", 0.55),),
     angled_xticks_from=10000,
+    angled_xtick_rotation=55.0,
+    angled_xtick_ha="left",
+    y_grid_ls="-",
     y_grid_major_every=20,
     y_grid_major_lw=1.4,
-    y_grid_minor_lw=0.9,
-    y_grid_major_alpha=0.60,
-    y_grid_minor_alpha=0.35,
+    y_grid_minor_lw=0.7,
+    y_grid_major_alpha=0.50,
+    y_grid_minor_alpha=0.25,
     show_vlines=True,
-    vline_alpha=0.35,
-    vline_lw=1.1,
+    vline_alpha=0.30,
+    vline_lw=0.9,
 )
 
 AXES_PRESETS: dict[str, AudiogramAxesConfig] = {
     "ansi": ANSI_BASE,
-    "ansi_uhf": ANSI_UHF,
-    "ansi_ped": ANSI_PED,
+    "ehf": EHF,
     "mei": MEI_BASE,
 }
 
 # Add aliases
-AXES_PRESETS["uhf"] = ANSI_UHF
 AXES_PRESETS["standard"] = ANSI_BASE
 AXES_PRESETS["michigan"] = MEI_BASE
 
@@ -143,7 +146,6 @@ def get_axes_preset(preset: str | AudiogramAxesConfig | None) -> AudiogramAxesCo
 
 PLOT_STYLE_PRESETS: dict[str, AudiogramPlotStyle] = {
     "ansi": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(7.5, 5.5), color_right="red", color_left="blue"),
-    "ansi_uhf": AudiogramPlotStyle(axes=ANSI_UHF, figsize=(7.5, 5.5), color_right="red", color_left="blue"),
 
     # Black & white: use grayscale palette; glyphs still encode laterality.
     "ansi_bw": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(7.5, 5.5), color_right="black", color_left="0.35"),
@@ -152,14 +154,16 @@ PLOT_STYLE_PRESETS: dict[str, AudiogramPlotStyle] = {
     "ansi_small": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(4.2, 3.2), color_right="red", color_left="blue"),
     "ansi_large": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(12.0, 8.0), color_right="red", color_left="blue"),
 
+    # Extended high-frequency supplemental
+    "ehf": AudiogramPlotStyle(axes=EHF, figsize=(7.5, 5.5), color_right="red", color_left="blue"),
+
     # MEI styles
-    "mei": AudiogramPlotStyle(axes=MEI_BASE, figsize=(7.5, 5.5), color_right="red", color_left="blue"),
-    "mei_bw": AudiogramPlotStyle(axes=MEI_BASE, figsize=(7.5, 5.5), color_right="black", color_left="0.35"),
+    "mei": AudiogramPlotStyle(axes=MEI_BASE, figsize=(9.0, 5.5), color_right="red", color_left="blue"),
+    "mei_bw": AudiogramPlotStyle(axes=MEI_BASE, figsize=(9.0, 5.5), color_right="black", color_left="0.35"),
 }
 
 # Convenience aliases
 PLOT_STYLE_PRESETS["standard"] = PLOT_STYLE_PRESETS["ansi"]
-PLOT_STYLE_PRESETS["uhf"] = PLOT_STYLE_PRESETS["ansi_uhf"]
 PLOT_STYLE_PRESETS["bw"] = PLOT_STYLE_PRESETS["ansi_bw"]
 PLOT_STYLE_PRESETS["small"] = PLOT_STYLE_PRESETS["ansi_small"]
 PLOT_STYLE_PRESETS["large"] = PLOT_STYLE_PRESETS["ansi_large"]
@@ -167,9 +171,12 @@ PLOT_STYLE_PRESETS["michigan"] = PLOT_STYLE_PRESETS["mei"]
 PLOT_STYLE_PRESETS["mei-bw"] = PLOT_STYLE_PRESETS["mei_bw"]
 
 
-def get_plot_style(style: str | AudiogramPlotStyle | None) -> AudiogramPlotStyle | None:
+DEFAULT_PLOT_STYLE = PLOT_STYLE_PRESETS["ansi"]
+
+
+def get_plot_style(style: str | AudiogramPlotStyle | None) -> AudiogramPlotStyle:
     if style is None:
-        return None
+        return DEFAULT_PLOT_STYLE
     if isinstance(style, AudiogramPlotStyle):
         return style
     key = style.lower().strip()
@@ -199,14 +206,6 @@ def setup_audiogram_axes(
     ax.set_xticks(list(p.xticks))
     ax.set_xticklabels(list(p.xtick_labels))
 
-    # Optionally rotate UHF tick labels (e.g., 10k/12.5k/14k/16k)
-    if p.angled_xticks_from is not None:
-        for tick, txt in zip(p.xticks, ax.get_xticklabels()):
-            if int(tick) >= int(p.angled_xticks_from):
-                txt.set_rotation(p.angled_xtick_rotation)
-                txt.set_ha(p.angled_xtick_ha)
-                txt.set_va("bottom")
-
     # Clinical layout: show freq ticks at top
     ax.tick_params(
         axis="x",
@@ -220,6 +219,16 @@ def setup_audiogram_axes(
     if not p.show_x_minor_ticks:
         ax.xaxis.set_minor_locator(plt.NullLocator())
         ax.tick_params(axis="x", which="minor", top=False, bottom=False)
+
+    # Rotate UHF tick labels — must happen AFTER tick_params moves labels to
+    # the top axis, since that creates new Text objects.
+    if p.angled_xticks_from is not None:
+        uhf_set = {int(t) for t in p.xticks if int(t) >= int(p.angled_xticks_from)}
+        for tick_val, txt in zip(p.xticks, ax.xaxis.get_majorticklabels()):
+            if int(tick_val) in uhf_set:
+                txt.set_rotation(p.angled_xtick_rotation)
+                txt.set_ha(p.angled_xtick_ha)
+                txt.set_va("bottom")
 
     ax.xaxis.set_label_position("top" if p.top_x_ticks else "bottom")
     ax.set_xlabel(p.x_label, labelpad=10)
@@ -266,13 +275,10 @@ def new_audiogram_canvas(
 ) -> tuple[plt.Figure, plt.Axes]:
     """Create a Figure+Axes and apply the audiogram canvas preset."""
     st = get_plot_style(style)
-    if st is not None:
-        if figsize is None:
-            figsize = st.figsize
-        if preset is None:
-            preset = st.axes
     if figsize is None:
-        figsize = (7.5, 5.5)
+        figsize = st.figsize
+    if preset is None:
+        preset = st.axes
 
     fig, ax = plt.subplots(
         figsize=figsize,
@@ -298,6 +304,19 @@ def plot_binaural_two_panel(
     right_masked: Iterable[int] = (),
     left_nr: Iterable[int] = (),
     right_nr: Iterable[int] = (),
+    show_bone: bool = False,
+    left_bone: Mapping[int, float] | None = None,
+    right_bone: Mapping[int, float] | None = None,
+    left_bone_masked: Iterable[int] = (),
+    right_bone_masked: Iterable[int] = (),
+    left_bone_nr: Iterable[int] = (),
+    right_bone_nr: Iterable[int] = (),
+    show_air: bool = True,
+    left_soundfield: Mapping[int, float] | None = None,
+    right_soundfield: Mapping[int, float] | None = None,
+    soundfield_color: str | None = None,
+    left_ci: Mapping[int, float] | None = None,
+    right_ci: Mapping[int, float] | None = None,
     sharey: bool = True,
     show_ylabel_right: bool = True,
     show_yticks_both: bool = True,
@@ -318,13 +337,17 @@ def plot_binaural_two_panel(
 
     st = get_plot_style(style)
     axes_preset = preset
-    if axes_preset is None and st is not None:
+    if axes_preset is None:
         axes_preset = st.axes
 
     if figsize is None:
-        figsize = st.figsize if st is not None else (11.0, 5.5)
-    color_r = (st.color_right if st is not None else "red")
-    color_l = (st.color_left if st is not None else "blue")
+        w, h = st.figsize
+        figsize = (w * 2 - 2, h)
+    color_r = st.color_right
+    color_l = st.color_left
+    color_sf = soundfield_color or st.color_soundfield
+    tm_fontsize = st.text_marker_fontsize
+    tm_fontweight = st.text_marker_fontweight
 
     fig, (ax_r, ax_l) = plt.subplots(
         nrows=1,
@@ -346,7 +369,7 @@ def plot_binaural_two_panel(
     def _panel_box_label(ax: plt.Axes, text: str) -> None:
         ax.text(
             0.5,
-            1.18,
+            1.28,
             text,
             transform=ax.transAxes,
             ha="center",
@@ -373,7 +396,7 @@ def plot_binaural_two_panel(
         ax_l.tick_params(axis="y", which="both", left=True, labelleft=True)
 
     if title:
-        fig.suptitle(title)
+        fig.suptitle(title, y=1.05, fontsize=13, fontweight="bold")
 
     # Optional cleanup for right panel y-label
     if not show_ylabel_right:
@@ -381,24 +404,26 @@ def plot_binaural_two_panel(
 
     # Plot right ear on LEFT panel
     plot_ear(
-        ax_r,
-        right,
-        ear="right",
-        cfg=cfg,
-        masked_freqs=right_masked,
-        nr_freqs=right_nr,
-        color=color_r,
+        ax_r, right, ear="right", cfg=cfg,
+        show_air=show_air,
+        masked_freqs=right_masked, nr_freqs=right_nr, color=color_r,
+        show_bone=show_bone, bone_thresholds=right_bone,
+        bone_masked_freqs=right_bone_masked, bone_nr_freqs=right_bone_nr,
+        soundfield_thresholds=right_soundfield, soundfield_color=color_sf,
+        ci_thresholds=right_ci,
+        text_marker_fontsize=tm_fontsize, text_marker_fontweight=tm_fontweight,
     )
 
     # Plot left ear on RIGHT panel
     plot_ear(
-        ax_l,
-        left,
-        ear="left",
-        cfg=cfg,
-        masked_freqs=left_masked,
-        nr_freqs=left_nr,
-        color=color_l,
+        ax_l, left, ear="left", cfg=cfg,
+        show_air=show_air,
+        masked_freqs=left_masked, nr_freqs=left_nr, color=color_l,
+        show_bone=show_bone, bone_thresholds=left_bone,
+        bone_masked_freqs=left_bone_masked, bone_nr_freqs=left_bone_nr,
+        soundfield_thresholds=left_soundfield, soundfield_color=color_sf,
+        ci_thresholds=left_ci,
+        text_marker_fontsize=tm_fontsize, text_marker_fontweight=tm_fontweight,
     )
 
     return fig, (ax_r, ax_l)
@@ -412,6 +437,55 @@ def _as_sorted_pairs(thresholds: Mapping[int, float] | Sequence[tuple[int, float
     items = [(int(f), float(v)) for f, v in items]
     items.sort(key=lambda t: t[0])
     return items
+
+
+def _plot_text_series(
+    ax: plt.Axes,
+    thresholds: Mapping[int, float] | Sequence[tuple[int, float]],
+    *,
+    label: str,
+    color: str,
+    linewidth: float = 1.5,
+    fontsize: float = 9.0,
+    fontweight: str = "bold",
+    zorder: int = 4,
+):
+    """Plot a threshold series using text labels ('S', 'CI') instead of path symbols.
+
+    Draws connecting lines between all points, then places text labels at each
+    threshold, centered on the data point with a white background for legibility.
+    """
+    items = _as_sorted_pairs(thresholds)
+    if not items:
+        return
+
+    if len(items) > 1:
+        xs = [float(f) for f, _ in items]
+        ys = [float(y) for _, y in items]
+        ax.plot(
+            xs, ys,
+            color=color,
+            linewidth=linewidth,
+            zorder=zorder - 1,
+            solid_capstyle="round",
+        )
+
+    for f, y in items:
+        ax.text(
+            float(f), float(y), label,
+            color=color,
+            fontsize=fontsize,
+            fontweight=fontweight,
+            ha="center",
+            va="center",
+            zorder=zorder,
+            bbox=dict(
+                boxstyle="round,pad=0.15",
+                facecolor="white",
+                edgecolor="none",
+                alpha=0.85,
+            ),
+        )
 
 
 def plot_ear(
@@ -428,16 +502,39 @@ def plot_ear(
     show_air: bool = True,
     show_bone: bool = False,
     bone_thresholds: Mapping[int, float] | Sequence[tuple[int, float]] | None = None,
+    bone_masked_freqs: Iterable[int] = (),
+    bone_nr_freqs: Iterable[int] = (),
+    soundfield_thresholds: Mapping[int, float] | None = None,
+    soundfield_color: str | None = None,
+    ci_thresholds: Mapping[int, float] | None = None,
+    ci_color: str | None = None,
+    text_marker_fontsize: float = 9.0,
+    text_marker_fontweight: str = "bold",
 ):
     """Plot one ear worth of thresholds onto an already-configured audiogram axes.
 
-    Notes
-    - `thresholds` is typically air-conduction.
-    - For now, `masked_freqs` toggles the air glyph (square/triangle).
-    - `nr_freqs` toggles NR composite overlays.
-    - Optional `bone_thresholds` allows plotting bone points separately.
-
-    This stays deliberately simple; you can build richer APIs later.
+    Parameters
+    ----------
+    thresholds
+        Air conduction thresholds (freq_hz -> dB HL).
+    masked_freqs / nr_freqs
+        Air conduction frequencies that are masked or NR.
+    bone_thresholds
+        Bone conduction thresholds (freq_hz -> dB HL). Only plotted when show_bone=True.
+    bone_masked_freqs / bone_nr_freqs
+        Bone conduction frequencies that are masked or NR.
+    soundfield_thresholds
+        Soundfield thresholds (freq_hz -> dB HL). Plotted as 'S' text markers.
+    soundfield_color
+        Color for soundfield series. Defaults to green.
+    ci_thresholds
+        Cochlear implant aided thresholds (freq_hz -> dB HL). Plotted as 'CI' text markers.
+    ci_color
+        Color for CI series. Defaults to the ear color.
+    text_marker_fontsize
+        Font size for text-based markers (S, CI).
+    text_marker_fontweight
+        Font weight for text-based markers (S, CI).
     """
     ear = ear.lower()
     if ear not in ("left", "right"):
@@ -452,15 +549,51 @@ def plot_ear(
     air_items = _as_sorted_pairs(thresholds)
 
     if show_air:
+        connectable = [(f, y) for f, y in air_items if f not in nr_set]
+        if len(connectable) > 1:
+            xs = [float(f) for f, y in connectable]
+            ys = [float(y) for f, y in connectable]
+            ax.plot(
+                xs, ys,
+                color=color,
+                linewidth=cfg.style.linewidth,
+                zorder=zorder_air - 1,
+                solid_capstyle="round",
+            )
+
         for f, y in air_items:
             s = sym.get_symbol(kind="air", ear=ear, masked=(f in masked_set), nr=(f in nr_set), cfg=cfg)
-            rm.add_air_symbol(ax, s, float(f), float(y), cfg=cfg, color=color, zorder=zorder_air)
+            rm.add_air_symbol(ax, s, float(f), float(y), cfg=cfg, color=color, zorder=zorder_air, fill=True, facecolor="white")
 
     if show_bone and bone_thresholds is not None:
+        bone_masked_set = set(int(f) for f in bone_masked_freqs)
+        bone_nr_set = set(int(f) for f in bone_nr_freqs)
         bone_items = _as_sorted_pairs(bone_thresholds)
         for f, y in bone_items:
-            s = sym.get_symbol(kind="bone", ear=ear, masked=(f in masked_set), nr=(f in nr_set), cfg=cfg)
+            s = sym.get_symbol(kind="bone", ear=ear, masked=(f in bone_masked_set), nr=(f in bone_nr_set), cfg=cfg)
             rm.add_bone_symbol(ax, s, float(f), float(y), cfg=cfg, color=color, zorder=zorder_bone)
+
+    if soundfield_thresholds:
+        _plot_text_series(
+            ax, soundfield_thresholds,
+            label="S",
+            color=soundfield_color or "#2ca02c",
+            linewidth=cfg.style.linewidth,
+            fontsize=text_marker_fontsize,
+            fontweight=text_marker_fontweight,
+            zorder=zorder_air + 1,
+        )
+
+    if ci_thresholds:
+        _plot_text_series(
+            ax, ci_thresholds,
+            label="CI",
+            color=ci_color or color,
+            linewidth=cfg.style.linewidth,
+            fontsize=text_marker_fontsize,
+            fontweight=text_marker_fontweight,
+            zorder=zorder_air + 1,
+        )
 
 
 def plot_binaural(
@@ -478,21 +611,33 @@ def plot_binaural(
     right_masked: Iterable[int] = (),
     left_nr: Iterable[int] = (),
     right_nr: Iterable[int] = (),
+    show_bone: bool = False,
+    left_bone: Mapping[int, float] | None = None,
+    right_bone: Mapping[int, float] | None = None,
+    left_bone_masked: Iterable[int] = (),
+    right_bone_masked: Iterable[int] = (),
+    left_bone_nr: Iterable[int] = (),
+    right_bone_nr: Iterable[int] = (),
+    show_air: bool = True,
+    left_soundfield: Mapping[int, float] | None = None,
+    right_soundfield: Mapping[int, float] | None = None,
+    soundfield_color: str | None = None,
+    left_ci: Mapping[int, float] | None = None,
+    right_ci: Mapping[int, float] | None = None,
 ) -> tuple[plt.Figure, plt.Axes]:
-    """Convenience: create a canvas and plot left+right air thresholds.
-
-    Notes
-    - preset: optional axes-only override (wins over style for axis configuration)
-    """
+    """Create a canvas and plot left+right thresholds on a single axes."""
     st = get_plot_style(style)
     axes_preset = preset
-    if axes_preset is None and st is not None:
+    if axes_preset is None:
         axes_preset = st.axes
 
     if figsize is None:
-        figsize = st.figsize if st is not None else (7.5, 5.5)
-    color_r = (st.color_right if st is not None else "red")
-    color_l = (st.color_left if st is not None else "blue")
+        figsize = st.figsize
+    color_r = st.color_right
+    color_l = st.color_left
+    color_sf = soundfield_color or st.color_soundfield
+    tm_fontsize = st.text_marker_fontsize
+    tm_fontweight = st.text_marker_fontweight
 
     fig, ax = new_audiogram_canvas(
         style=style,
@@ -503,7 +648,25 @@ def plot_binaural(
         constrained_layout=constrained_layout,
     )
 
-    plot_ear(ax, right, ear="right", cfg=cfg, masked_freqs=right_masked, nr_freqs=right_nr, color=color_r)
-    plot_ear(ax, left, ear="left", cfg=cfg, masked_freqs=left_masked, nr_freqs=left_nr, color=color_l)
+    plot_ear(
+        ax, right, ear="right", cfg=cfg,
+        show_air=show_air,
+        masked_freqs=right_masked, nr_freqs=right_nr, color=color_r,
+        show_bone=show_bone, bone_thresholds=right_bone,
+        bone_masked_freqs=right_bone_masked, bone_nr_freqs=right_bone_nr,
+        soundfield_thresholds=right_soundfield, soundfield_color=color_sf,
+        ci_thresholds=right_ci,
+        text_marker_fontsize=tm_fontsize, text_marker_fontweight=tm_fontweight,
+    )
+    plot_ear(
+        ax, left, ear="left", cfg=cfg,
+        show_air=show_air,
+        masked_freqs=left_masked, nr_freqs=left_nr, color=color_l,
+        show_bone=show_bone, bone_thresholds=left_bone,
+        bone_masked_freqs=left_bone_masked, bone_nr_freqs=left_bone_nr,
+        soundfield_thresholds=left_soundfield, soundfield_color=color_sf,
+        ci_thresholds=left_ci,
+        text_marker_fontsize=tm_fontsize, text_marker_fontweight=tm_fontweight,
+    )
 
     return fig, ax
