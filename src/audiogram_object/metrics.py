@@ -1,3 +1,5 @@
+"""Pure-function metrics: PTA, severity, ABG, loss type, and summary registry."""
+
 from __future__ import annotations
 
 import warnings

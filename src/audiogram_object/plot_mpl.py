@@ -14,7 +14,7 @@ Geometry lives in `symbols.py`. Low-level drawing lives in `render_mpl.py`.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Sequence, Tuple
+from typing import Iterable, Mapping, Sequence
 
 import numpy as np
 import matplotlib.pyplot as plt

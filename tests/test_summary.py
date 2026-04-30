@@ -49,6 +49,29 @@ class TestSummaryBasic:
         s = simple_ba.summary()
         assert "asymmetric_any_15db" in s
 
+    def test_summary_has_all_asymmetry_criteria(self, simple_ba):
+        s = simple_ba.summary()
+        from audiogram_object.asymmetry import ASYMMETRY_CRITERIA
+        for name in ASYMMETRY_CRITERIA:
+            assert f"asymmetric_{name}" in s
+
+    def test_summary_wrs_15pct_with_data(self):
+        left = EarAudiogram(
+            air={500: 20.0, 1000: 25.0, 2000: 30.0},
+            wrs=[WordRecognitionScore(92.0, 70.0)],
+        )
+        right = EarAudiogram(
+            air={500: 20.0, 1000: 25.0, 2000: 30.0},
+            wrs=[WordRecognitionScore(72.0, 70.0)],
+        )
+        ba = BinauralAudiogram(left, right)
+        s = ba.summary()
+        assert s["asymmetric_wrs_15pct"] is True
+
+    def test_summary_wrs_15pct_none_without_data(self, simple_ba):
+        s = simple_ba.summary()
+        assert s["asymmetric_wrs_15pct"] is None
+
 
 class TestSummaryFiltering:
     def test_include(self, simple_ba):

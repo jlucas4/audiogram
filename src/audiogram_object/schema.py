@@ -185,36 +185,27 @@ def validate_frequency(freq_hz: int, *, strict: bool = False) -> None:
 
 
 
-def validate_long_row(row: dict[str, Any], *, strict_freqs: bool = False) -> None:
-    """Validate one long-form observation row.
+_THRESHOLD_ROW_REQUIRED = {
+    AUDIOGRAM_ID,
+    EAR,
+    FREQ_HZ,
+    THRESHOLD_DB,
+    PATHWAY,
+    MASKED,
+    NR,
+}
 
-    Required fields for v1:
-    - audiogram_id
-    - ear
-    - freq_hz
-    - threshold_db
-    - pathway
-    - masked
-    - nr
-    """
-    required = {
-        AUDIOGRAM_ID,
-        EAR,
-        FREQ_HZ,
-        THRESHOLD_DB,
-        PATHWAY,
-        MASKED,
-        NR,
-    }
-    missing = sorted(required - set(row.keys()))
+
+def _validate_threshold_row(row: dict[str, Any], *, strict_freqs: bool = False, label: str = "Row") -> None:
+    """Shared validation for long-form and observations rows."""
+    missing = sorted(_THRESHOLD_ROW_REQUIRED - set(row.keys()))
     if missing:
-        raise ValueError(f"Long row missing required columns: {missing}")
+        raise ValueError(f"{label} missing required columns: {missing}")
 
     validate_ear(str(row[EAR]))
     validate_pathway(str(row[PATHWAY]))
     validate_frequency(int(row[FREQ_HZ]), strict=strict_freqs)
 
-    # Threshold may be int/float-like; convertibility is enough for v1.
     try:
         float(row[THRESHOLD_DB])
     except (TypeError, ValueError) as e:
@@ -224,6 +215,11 @@ def validate_long_row(row: dict[str, Any], *, strict_freqs: bool = False) -> Non
         raise ValueError(f"masked must be bool, got {type(row[MASKED]).__name__}")
     if not isinstance(row[NR], bool):
         raise ValueError(f"nr must be bool, got {type(row[NR]).__name__}")
+
+
+def validate_long_row(row: dict[str, Any], *, strict_freqs: bool = False) -> None:
+    """Validate one long-form observation row."""
+    _validate_threshold_row(row, strict_freqs=strict_freqs, label="Long row")
 
 
 
@@ -364,30 +360,6 @@ def apply_column_map(row: dict[str, Any], column_map: dict[str, str]) -> dict[st
 
 
 def validate_observations_row(row: dict[str, Any], *, strict_freqs: bool = False) -> None:
-    required = {
-        AUDIOGRAM_ID,
-        EAR,
-        FREQ_HZ,
-        THRESHOLD_DB,
-        PATHWAY,
-        MASKED,
-        NR,
-    }
-    missing = sorted(required - set(row.keys()))
-    if missing:
-        raise ValueError(f"Observations row missing required columns: {missing}")
-
-    validate_ear(str(row[EAR]))
-    validate_pathway(str(row[PATHWAY]))
-    validate_frequency(int(row[FREQ_HZ]), strict=strict_freqs)
-
-    try:
-        float(row[THRESHOLD_DB])
-    except (TypeError, ValueError) as e:
-        raise ValueError(f"Invalid threshold_db value: {row[THRESHOLD_DB]!r}") from e
-
-    if not isinstance(row[MASKED], bool):
-        raise ValueError(f"masked must be bool, got {type(row[MASKED]).__name__}")
-    if not isinstance(row[NR], bool):
-        raise ValueError(f"nr must be bool, got {type(row[NR]).__name__}")
+    """Validate one normalized observations-table row."""
+    _validate_threshold_row(row, strict_freqs=strict_freqs, label="Observations row")
 

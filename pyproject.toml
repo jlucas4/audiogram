@@ -27,7 +27,7 @@ Repository = "https://github.com/jlucas4/audiogram-object"
 Issues = "https://github.com/jlucas4/audiogram-object/issues"
 
 [project.optional-dependencies]
-plot = ["matplotlib>=3.7,<4.0.0"]
+plot = ["matplotlib>=3.7,<4.0.0", "numpy>=1.24"]
 
 [tool.poetry]
 packages = [{include = "audiogram_object", from = "src"}]

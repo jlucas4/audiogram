@@ -1,3 +1,12 @@
+"""audiogram-object: typed Python objects for clinical audiometric data."""
+
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("audiogram-object")
+except PackageNotFoundError:
+    __version__ = "0.0.0-dev"
+
 from .audiogram import ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram
 from .asymmetry import InterauralDifference, ASYMMETRY_CRITERIA, compute_interaural_differences
 from .metrics import (
@@ -51,6 +60,7 @@ from .schema import (
 )
 
 __all__ = [
+    "__version__",
     # Core objects
     "ThresholdPoint",
     "WordRecognitionScore",

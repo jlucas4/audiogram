@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple, Mapping
+from typing import Mapping
 from functools import lru_cache
 from enum import IntEnum
 
@@ -26,16 +26,16 @@ class Cmd(IntEnum):
 class NRStartConfig:
     """Per-glyph attachment point (in local glyph coords) for NR arrow tail."""
 
-    O: Tuple[float, float] = (-0.80, -0.60)
-    X: Tuple[float, float] = (0.6, -0.6)
-    TRI: Tuple[float, float] = (-1.0, -1.0)
-    SQ: Tuple[float, float] = (1.0, -1.0)
-    CHEV_R: Tuple[float, float] = (-0.30, -1.1)
-    CHEV_L: Tuple[float, float] = (0.30, -1.1)
-    BRACK_R: Tuple[float, float] = (-0.30, -1.2)
-    BRACK_L: Tuple[float, float] = (0.30, -1.2)
+    O: tuple[float, float] = (-0.80, -0.60)
+    X: tuple[float, float] = (0.6, -0.6)
+    TRI: tuple[float, float] = (-1.0, -1.0)
+    SQ: tuple[float, float] = (1.0, -1.0)
+    CHEV_R: tuple[float, float] = (-0.30, -1.1)
+    CHEV_L: tuple[float, float] = (0.30, -1.1)
+    BRACK_R: tuple[float, float] = (-0.30, -1.2)
+    BRACK_L: tuple[float, float] = (0.30, -1.2)
 
-    def as_dict(self) -> Mapping[str, Tuple[float, float]]:
+    def as_dict(self) -> Mapping[str, tuple[float, float]]:
         return {
             "O": self.O,
             "X": self.X,
@@ -90,7 +90,7 @@ class SymbolPath:
 
     verts: np.ndarray
     codes: np.ndarray
-    anchor: Tuple[float, float] = (0.0, 0.0)
+    anchor: tuple[float, float] = (0.0, 0.0)
 
 
 @dataclass(frozen=True)
@@ -103,7 +103,7 @@ class SymbolComposite:
     """
 
     base: SymbolPath
-    overlays: Tuple[SymbolPath, ...] = ()
+    overlays: tuple[SymbolPath, ...] = ()
 
 
 @dataclass(frozen=True)

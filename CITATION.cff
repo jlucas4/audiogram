@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "audiogram-object"
+abstract: "Typed Python objects for clinical audiometric data"
+version: 0.1.0
+date-released: 2026-04-30
+license: MIT
+repository-code: "https://github.com/jlucas4/audiogram-object"
+authors:
+  - family-names: Lucas
+    given-names: Jacob
+    email: jake.lucas.ent@gmail.com
+    orcid: "https://orcid.org/0000-0002-5441-6576"
+keywords:
+  - audiology
+  - audiogram
+  - hearing
+  - clinical
+  - otolaryngology

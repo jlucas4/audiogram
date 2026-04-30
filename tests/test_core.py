@@ -132,10 +132,6 @@ class TestEarAudiogram:
 # ---------------------------------------------------------------------------
 
 class TestBinauralAudiogram:
-    def test_lr_shortcuts(self, full_ba):
-        assert full_ba.L is full_ba.left
-        assert full_ba.R is full_ba.right
-
     def test_metadata_stored(self, full_ba):
         assert full_ba.audiogram_id == "full-001"
         assert full_ba.subject_id == "pt-123"

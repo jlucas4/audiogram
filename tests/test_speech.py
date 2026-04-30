@@ -50,6 +50,22 @@ class TestWordRecognitionScore:
         b = WordRecognitionScore(88.0, 70.0)
         assert a != b
 
+    def test_score_pct_too_high(self):
+        with pytest.raises(ValueError, match="score_pct must be 0–100"):
+            WordRecognitionScore(101.0, 70.0)
+
+    def test_score_pct_negative(self):
+        with pytest.raises(ValueError, match="score_pct must be 0–100"):
+            WordRecognitionScore(-1.0, 70.0)
+
+    def test_score_pct_boundary_zero(self):
+        w = WordRecognitionScore(0.0, 70.0)
+        assert w.score_pct == 0.0
+
+    def test_score_pct_boundary_hundred(self):
+        w = WordRecognitionScore(100.0, 70.0)
+        assert w.score_pct == 100.0
+
 
 class TestEarAudiogramSpeech:
     def test_speech_defaults(self):
