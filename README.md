@@ -93,8 +93,10 @@ ear = EarAudiogram(
     wrs=[WordRecognitionScore(92.0, 70.0, word_list="CNC")],
 )
 
-ear.pta()                                            # 25.0 — standard 3-freq PTA
-ear.pta(freqs=(500, 1000, 2000, 4000))              # 4-frequency PTA
+ear.pta()                                            # 25.0 — 3-tone PTA (default)
+ear.pta(standard="4tone")                            # 4-tone PTA (500/1000/2000/4000)
+ear.pta(standard="aao_hns")                          # AAO-HNS (500/1000/2000/3000 w/ fallback)
+ear.pta(freqs=(500, 1000, 2000, 4000))              # explicit freq override
 ear.pta(pathway="bone")                              # bone conduction PTA
 ear.pta(require_all=True)                            # None if any freq is missing
 ear.available_frequencies()                          # [500, 1000, 2000]
@@ -111,13 +113,11 @@ ear.srt_pta_agreement()                              # 0.0 (SRT - PTA; should be
 Both ears with test-level metadata.
 
 ```python
-ba.L is ba.left                                      # True — shorthand aliases
-ba.R is ba.right
-
 ba.get_threshold(1000, "left")                       # ThresholdPoint
 ba.get_threshold(1000, "left", pathway="bone")
 
 ba.pta()                                             # {"left": 30.0, "right": 28.3}
+ba.pta(standard="aao_hns")                           # AAO-HNS PTA for each ear
 ba.better_ear_pta()                                  # 28.3
 ba.worse_ear_pta()                                   # 30.0
 ba.symmetry()                                        # {500: 5.0, 1000: 5.0, ...} (left - right)
@@ -149,9 +149,9 @@ WHO 2021 hearing loss grading based on pure-tone average. Also supports AAO-HNS
 (500/1000/2000/3000 Hz with avg(2000, 4000) fallback when 3000 is absent).
 
 ```python
-left.severity()                                      # "moderate" (4-freq PTA default)
+left.severity()                                      # "moderate" (WHO 2021, 4-tone PTA)
 left.severity(standard="aao_hns")                    # AAO-HNS method
-left.severity(freqs=(500, 1000, 2000))               # custom frequencies (WHO only)
+left.severity(freqs=(500, 1000, 2000))               # explicit freq override
 ba.severity()                                        # {"left": "moderate", "right": "mild"}
 ```
 
@@ -165,8 +165,13 @@ from audiogram_object import ASYMMETRY_CRITERIA
 
 # Named built-in criteria
 ba.is_asymmetric("any_15db")             # any frequency >= 15 dB interaural difference
+ba.is_asymmetric("any_30db")             # any frequency >= 30 dB
 ba.is_asymmetric("two_consecutive_10db") # two consecutive freqs >= 10 dB apart
+ba.is_asymmetric("two_consecutive_15db") # two consecutive freqs >= 15 dB apart
+ba.is_asymmetric("three_consecutive_10db") # three consecutive freqs >= 10 dB apart
 ba.is_asymmetric("pta_15db")             # PTA difference between ears >= 15 dB
+ba.is_asymmetric("3k_rule")              # >= 15 dB at 3000 Hz
+ba.is_asymmetric("wrs_15pct")            # best WRS differs by > 15%
 ba.is_asymmetric("nr_one_side")          # one ear NR, other has a threshold
 
 # Custom criterion — any callable (BinauralAudiogram) -> bool | None

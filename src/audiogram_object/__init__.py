@@ -11,6 +11,7 @@ from .audiogram import ThresholdPoint, WordRecognitionScore, EarAudiogram, Binau
 from .asymmetry import InterauralDifference, ASYMMETRY_CRITERIA, compute_interaural_differences
 from .metrics import (
     pta_from_thresholds,
+    PTA_STANDARDS,
     symmetry_from_thresholds,
     better_ear_from_values,
     worse_ear_from_values,
@@ -18,7 +19,6 @@ from .metrics import (
     srt_pta_agreement,
     severity_from_pta,
     severity_from_thresholds,
-    aao_hns_pta,
     abg_from_thresholds,
     abg_pta,
     loss_type,
@@ -103,6 +103,7 @@ __all__ = [
     "compute_interaural_differences",
     # Metrics (standalone functions)
     "pta_from_thresholds",
+    "PTA_STANDARDS",
     "symmetry_from_thresholds",
     "better_ear_from_values",
     "worse_ear_from_values",
@@ -123,5 +124,4 @@ __all__ = [
     "VALID_STANDARDS",
     "severity_from_pta",
     "severity_from_thresholds",
-    "aao_hns_pta",
 ]

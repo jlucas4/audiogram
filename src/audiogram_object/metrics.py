@@ -10,31 +10,45 @@ if TYPE_CHECKING:
 
 SummaryMetric = Callable[..., dict[str, Any]]
 
+PTA_STANDARDS: dict[str, tuple[int, ...]] = {
+    "3tone": (500, 1000, 2000),
+    "4tone": (500, 1000, 2000, 4000),
+}
+
 
 def pta_from_thresholds(
     thresholds: dict[int, float],
-    freqs: Iterable[int] = (500, 1000, 2000),
     *,
+    standard: str = "3tone",
+    freqs: Iterable[int] | None = None,
     require_all: bool = False,
 ) -> float | None:
-    """
-    Compute pure-tone average from a frequency->threshold mapping.
+    """Compute pure-tone average from a frequency->threshold mapping.
 
     Parameters
     ----------
     thresholds
         Mapping of frequency (Hz) -> threshold (dB HL).
+    standard
+        PTA convention: '3tone' (500/1000/2000), '4tone' (500/1000/2000/4000),
+        or 'aao_hns' (500/1000/2000/3000 with avg(2000,4000) fallback).
     freqs
-        Frequencies to include in the average.
+        Explicit frequency list — overrides *standard* when provided.
     require_all
         If True, return None unless all requested frequencies are present.
-
-    Returns
-    -------
-    float | None
-        Mean threshold across requested frequencies, or None if unavailable.
     """
-    req_freqs = tuple(int(f) for f in freqs)
+    if freqs is not None:
+        req_freqs = tuple(int(f) for f in freqs)
+    elif standard == "aao_hns":
+        return _aao_hns_pta(thresholds, require_all=require_all)
+    elif standard in PTA_STANDARDS:
+        req_freqs = PTA_STANDARDS[standard]
+    else:
+        raise ValueError(
+            f"Unknown PTA standard {standard!r}. "
+            f"Expected one of: {sorted(PTA_STANDARDS.keys() | {'aao_hns'})}"
+        )
+
     vals = [float(thresholds[f]) for f in req_freqs if f in thresholds]
 
     if require_all and len(vals) != len(req_freqs):
@@ -158,7 +172,7 @@ def abg_pta(
     bone: dict[int, float],
     *,
     standard: str = "who2021",
-    freqs: Iterable[int] = (500, 1000, 2000, 4000),
+    freqs: Iterable[int] | None = None,
     require_all: bool = False,
 ) -> float | None:
     """Compute PTA of the air-bone gap.
@@ -166,8 +180,9 @@ def abg_pta(
     Parameters
     ----------
     standard
-        'who2021' uses *freqs* (default 500/1000/2000/4000).
-        'aao_hns' uses 500/1000/2000/3000 with avg(2000, 4000) fallback.
+        'who2021' (uses 4-tone PTA) or 'aao_hns'.
+    freqs
+        Explicit frequency list — overrides the standard's default frequencies.
     """
     if standard not in VALID_STANDARDS:
         raise ValueError(f"Unknown standard {standard!r}. Expected one of: {sorted(VALID_STANDARDS)}")
@@ -176,9 +191,8 @@ def abg_pta(
     if not gaps:
         return None
 
-    if standard == "aao_hns":
-        return aao_hns_pta(gaps, require_all=require_all)
-    return pta_from_thresholds(gaps, freqs=freqs, require_all=require_all)
+    pta_std = "4tone" if standard == "who2021" else "aao_hns"
+    return pta_from_thresholds(gaps, standard=pta_std, freqs=freqs, require_all=require_all)
 
 
 LOSS_TYPES = ("normal", "sensorineural", "conductive", "mixed")
@@ -238,17 +252,12 @@ def severity_from_pta(pta: float | None) -> str | None:
     return None
 
 
-def aao_hns_pta(
+def _aao_hns_pta(
     thresholds: dict[int, float],
     *,
     require_all: bool = False,
 ) -> float | None:
-    """Compute PTA using the AAO-HNS method (500/1000/2000/3000 Hz).
-
-    If 3000 Hz is not present, uses the average of 2000 and 4000 Hz as
-    the 3000 Hz value. If that fallback is also not possible, the 3000 Hz
-    contribution is omitted (unless require_all is True).
-    """
+    """AAO-HNS PTA: 500/1000/2000/3000 Hz with avg(2000,4000) fallback for 3000."""
     vals: list[float] = []
     base_freqs = (500, 1000, 2000)
     expected = 4
@@ -276,9 +285,9 @@ def aao_hns_pta(
 
 def severity_from_thresholds(
     thresholds: dict[int, float],
-    freqs: Iterable[int] = (500, 1000, 2000, 4000),
     *,
     standard: str = "who2021",
+    freqs: Iterable[int] | None = None,
     require_all: bool = False,
 ) -> str | None:
     """Classify hearing loss severity from raw thresholds.
@@ -287,22 +296,18 @@ def severity_from_thresholds(
     ----------
     thresholds
         Mapping of frequency (Hz) -> threshold (dB HL).
-    freqs
-        Frequencies for the PTA calculation (WHO 2021 only).
-        Ignored when standard='aao_hns'.
     standard
-        'who2021' (default) or 'aao_hns'. AAO-HNS uses 500/1000/2000/3000
-        with a fallback of avg(2000, 4000) when 3000 is absent.
+        'who2021' (default, uses 4-tone PTA) or 'aao_hns'.
+    freqs
+        Explicit frequency list — overrides the standard's default frequencies.
     require_all
         If True, return None unless all required frequencies are present.
     """
     if standard not in VALID_STANDARDS:
         raise ValueError(f"Unknown standard {standard!r}. Expected one of: {sorted(VALID_STANDARDS)}")
 
-    if standard == "aao_hns":
-        pta = aao_hns_pta(thresholds, require_all=require_all)
-    else:
-        pta = pta_from_thresholds(thresholds, freqs=freqs, require_all=require_all)
+    pta_std = "4tone" if standard == "who2021" else "aao_hns"
+    pta = pta_from_thresholds(thresholds, standard=pta_std, freqs=freqs, require_all=require_all)
     return severity_from_pta(pta)
 
 
@@ -422,13 +427,14 @@ def _speech_summary(ba: BinauralAudiogram, **kwargs: Any) -> dict[str, Any]:
 
 def _abg_summary(ba: BinauralAudiogram, **kwargs: Any) -> dict[str, Any]:
     standard = kwargs.get("standard", "who2021")
+    pta_std = "3tone" if standard == "who2021" else "aao_hns"
     result: dict[str, Any] = {}
     for ear_name, ear_obj in (("right", ba.right), ("left", ba.left)):
         air = {f: p.threshold_db for f, p in ear_obj.air.items()}
         bone = {f: p.threshold_db for f, p in ear_obj.bone.items()}
         ear_abg_pta = abg_pta(air, bone, standard=standard)
-        air_pta_val = pta_from_thresholds(air) if standard == "who2021" else aao_hns_pta(air)
-        bone_pta_val = pta_from_thresholds(bone) if standard == "who2021" else aao_hns_pta(bone)
+        air_pta_val = pta_from_thresholds(air, standard=pta_std)
+        bone_pta_val = pta_from_thresholds(bone, standard=pta_std)
         result[f"{ear_name}_abg_pta"] = ear_abg_pta
         result[f"{ear_name}_loss_type"] = loss_type(air_pta_val, bone_pta_val, ear_abg_pta)
     return result

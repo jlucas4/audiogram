@@ -100,6 +100,18 @@ class TestEarAudiogram:
         )
         assert ear.pta(pathway="bone") == pytest.approx(30.0)
 
+    def test_pta_4tone(self):
+        ear = EarAudiogram(air={500: 20.0, 1000: 30.0, 2000: 40.0, 4000: 50.0})
+        assert ear.pta(standard="4tone") == pytest.approx(35.0)
+
+    def test_pta_aao_hns(self):
+        ear = EarAudiogram(air={500: 20.0, 1000: 30.0, 2000: 40.0, 3000: 50.0})
+        assert ear.pta(standard="aao_hns") == pytest.approx(35.0)
+
+    def test_pta_freqs_overrides_standard(self):
+        ear = EarAudiogram(air={500: 10.0, 1000: 30.0, 2000: 50.0})
+        assert ear.pta(standard="4tone", freqs=(500,)) == pytest.approx(10.0)
+
     def test_to_dict_structure(self):
         ear = EarAudiogram(
             air={500: ThresholdPoint(20.0)},

@@ -168,8 +168,9 @@ class EarAudiogram:
 
     def pta(
         self,
-        freqs: Iterable[int] = (500, 1000, 2000),
         *,
+        standard: str = "3tone",
+        freqs: Iterable[int] | None = None,
         pathway: str = "air",
         require_all: bool = False,
     ) -> float | None:
@@ -177,8 +178,11 @@ class EarAudiogram:
 
         Parameters
         ----------
+        standard
+            '3tone' (500/1000/2000), '4tone' (500/1000/2000/4000),
+            or 'aao_hns' (500/1000/2000/3000 with fallback).
         freqs
-            Frequencies to include in the average.
+            Explicit frequency list — overrides *standard* when provided.
         pathway
             'air', 'bone', 'soundfield', or 'ci'.
         require_all
@@ -186,13 +190,13 @@ class EarAudiogram:
         """
         data = self._pathway_data(pathway)
         thresholds = {f: p.threshold_db for f, p in data.items()}
-        return _metrics.pta_from_thresholds(thresholds, freqs=freqs, require_all=require_all)
+        return _metrics.pta_from_thresholds(thresholds, standard=standard, freqs=freqs, require_all=require_all)
 
     def severity(
         self,
-        freqs: Iterable[int] = (500, 1000, 2000, 4000),
         *,
         standard: str = "who2021",
+        freqs: Iterable[int] | None = None,
         pathway: str = "air",
         require_all: bool = False,
     ) -> str | None:
@@ -200,12 +204,10 @@ class EarAudiogram:
 
         Parameters
         ----------
-        freqs
-            Frequencies for the PTA calculation (WHO 2021 only).
-            Ignored when standard='aao_hns'.
         standard
-            'who2021' (default) or 'aao_hns'. AAO-HNS uses
-            500/1000/2000/3000 with avg(2000, 4000) fallback for 3000.
+            'who2021' (default, uses 4-tone PTA) or 'aao_hns'.
+        freqs
+            Explicit frequency list — overrides the standard's default.
         pathway
             'air', 'bone', 'soundfield', or 'ci'.
         require_all
@@ -214,7 +216,7 @@ class EarAudiogram:
         data = self._pathway_data(pathway)
         thresholds = {f: p.threshold_db for f, p in data.items()}
         return _metrics.severity_from_thresholds(
-            thresholds, freqs=freqs, standard=standard, require_all=require_all,
+            thresholds, standard=standard, freqs=freqs, require_all=require_all,
         )
 
     def abg(self, *, mask_warning: bool = False) -> dict[int, float]:
@@ -232,7 +234,7 @@ class EarAudiogram:
         self,
         *,
         standard: str = "who2021",
-        freqs: Iterable[int] = (500, 1000, 2000, 4000),
+        freqs: Iterable[int] | None = None,
         require_all: bool = False,
     ) -> float | None:
         """PTA of the air-bone gap."""
@@ -244,12 +246,9 @@ class EarAudiogram:
         """Classify hearing loss type: normal, sensorineural, conductive, or mixed."""
         air = {f: p.threshold_db for f, p in self.air.items()}
         bone = {f: p.threshold_db for f, p in self.bone.items()}
-        if standard == "aao_hns":
-            air_pta_val = _metrics.aao_hns_pta(air)
-            bone_pta_val = _metrics.aao_hns_pta(bone)
-        else:
-            air_pta_val = _metrics.pta_from_thresholds(air)
-            bone_pta_val = _metrics.pta_from_thresholds(bone)
+        pta_std = "3tone" if standard == "who2021" else "aao_hns"
+        air_pta_val = _metrics.pta_from_thresholds(air, standard=pta_std)
+        bone_pta_val = _metrics.pta_from_thresholds(bone, standard=pta_std)
         abg_val = _metrics.abg_pta(air, bone, standard=standard)
         return _metrics.loss_type(air_pta_val, bone_pta_val, abg_val)
 
@@ -466,44 +465,47 @@ class BinauralAudiogram:
 
     def pta(
         self,
-        freqs: Iterable[int] = (500, 1000, 2000),
         *,
+        standard: str = "3tone",
+        freqs: Iterable[int] | None = None,
         pathway: str = "air",
         require_all: bool = False,
     ) -> dict[str, float | None]:
         """PTA for each ear as {'left': ..., 'right': ...}."""
         return {
-            "left": self.left.pta(freqs=freqs, pathway=pathway, require_all=require_all),
-            "right": self.right.pta(freqs=freqs, pathway=pathway, require_all=require_all),
+            "left": self.left.pta(standard=standard, freqs=freqs, pathway=pathway, require_all=require_all),
+            "right": self.right.pta(standard=standard, freqs=freqs, pathway=pathway, require_all=require_all),
         }
 
     def better_ear_pta(
         self,
-        freqs: Iterable[int] = (500, 1000, 2000),
         *,
+        standard: str = "3tone",
+        freqs: Iterable[int] | None = None,
         pathway: str = "air",
         require_all: bool = False,
     ) -> float | None:
         """Return the lower (better) PTA across ears."""
-        vals = self.pta(freqs=freqs, pathway=pathway, require_all=require_all).values()
+        vals = self.pta(standard=standard, freqs=freqs, pathway=pathway, require_all=require_all).values()
         return _metrics.better_ear_from_values(vals)
 
     def worse_ear_pta(
         self,
-        freqs: Iterable[int] = (500, 1000, 2000),
         *,
+        standard: str = "3tone",
+        freqs: Iterable[int] | None = None,
         pathway: str = "air",
         require_all: bool = False,
     ) -> float | None:
         """Return the higher (worse) PTA across ears."""
-        vals = self.pta(freqs=freqs, pathway=pathway, require_all=require_all).values()
+        vals = self.pta(standard=standard, freqs=freqs, pathway=pathway, require_all=require_all).values()
         return _metrics.worse_ear_from_values(vals)
 
     def severity(
         self,
-        freqs: Iterable[int] = (500, 1000, 2000, 4000),
         *,
         standard: str = "who2021",
+        freqs: Iterable[int] | None = None,
         pathway: str = "air",
         require_all: bool = False,
     ) -> dict[str, str | None]:
@@ -511,25 +513,18 @@ class BinauralAudiogram:
 
         Parameters
         ----------
-        freqs
-            Frequencies for the PTA calculation (WHO 2021 only).
-            Ignored when standard='aao_hns'.
         standard
-            'who2021' (default) or 'aao_hns'. AAO-HNS uses
-            500/1000/2000/3000 with avg(2000, 4000) fallback for 3000.
+            'who2021' (default, uses 4-tone PTA) or 'aao_hns'.
+        freqs
+            Explicit frequency list — overrides the standard's default.
         pathway
             'air', 'bone', 'soundfield', or 'ci'.
         require_all
             If True, return None unless all requested frequencies are present.
-
-        Returns
-        -------
-        dict
-            {'left': 'moderate', 'right': 'mild', ...}
         """
         return {
-            "left": self.left.severity(freqs=freqs, standard=standard, pathway=pathway, require_all=require_all),
-            "right": self.right.severity(freqs=freqs, standard=standard, pathway=pathway, require_all=require_all),
+            "left": self.left.severity(standard=standard, freqs=freqs, pathway=pathway, require_all=require_all),
+            "right": self.right.severity(standard=standard, freqs=freqs, pathway=pathway, require_all=require_all),
         }
 
     def interaural_differences(self, pathway: str = "air"):

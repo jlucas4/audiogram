@@ -3,8 +3,8 @@ import pytest
 
 from audiogram_object import (
     EarAudiogram, BinauralAudiogram, ThresholdPoint,
-    severity_from_pta, severity_from_thresholds, aao_hns_pta,
-    SEVERITY_GRADES, VALID_STANDARDS,
+    severity_from_pta, severity_from_thresholds, pta_from_thresholds,
+    PTA_STANDARDS, SEVERITY_GRADES, VALID_STANDARDS,
 )
 
 
@@ -108,44 +108,64 @@ class TestBinauralSeverity:
         assert sev["right"] is None
 
 
-class TestAAOHNSPta:
-    def test_with_3000(self):
+class TestPtaStandards:
+    def test_3tone_default(self):
+        thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0, 4000: 100.0}
+        assert pta_from_thresholds(thresholds) == pytest.approx(30.0)
+
+    def test_4tone(self):
+        thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0, 4000: 50.0}
+        assert pta_from_thresholds(thresholds, standard="4tone") == pytest.approx(35.0)
+
+    def test_aao_hns_with_3000(self):
         thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0, 3000: 50.0}
-        assert aao_hns_pta(thresholds) == pytest.approx(35.0)
+        assert pta_from_thresholds(thresholds, standard="aao_hns") == pytest.approx(35.0)
 
-    def test_fallback_avg_2000_4000(self):
+    def test_aao_hns_fallback_avg_2000_4000(self):
         thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0, 4000: 60.0}
-        # 3000 fallback = avg(40, 60) = 50
-        # PTA = (20 + 30 + 40 + 50) / 4 = 35
-        assert aao_hns_pta(thresholds) == pytest.approx(35.0)
+        assert pta_from_thresholds(thresholds, standard="aao_hns") == pytest.approx(35.0)
 
-    def test_3000_present_ignores_4000(self):
+    def test_aao_hns_3000_present_ignores_4000(self):
         thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0, 3000: 50.0, 4000: 100.0}
-        assert aao_hns_pta(thresholds) == pytest.approx(35.0)
+        assert pta_from_thresholds(thresholds, standard="aao_hns") == pytest.approx(35.0)
 
-    def test_no_3000_no_4000_omits(self):
+    def test_aao_hns_no_3000_no_4000_omits(self):
         thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0}
-        # Only 3 values averaged: (20 + 30 + 40) / 3 = 30
-        assert aao_hns_pta(thresholds) == pytest.approx(30.0)
+        assert pta_from_thresholds(thresholds, standard="aao_hns") == pytest.approx(30.0)
 
-    def test_require_all_with_3000(self):
+    def test_aao_hns_require_all_with_3000(self):
         thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0, 3000: 50.0}
-        assert aao_hns_pta(thresholds, require_all=True) == pytest.approx(35.0)
+        assert pta_from_thresholds(thresholds, standard="aao_hns", require_all=True) == pytest.approx(35.0)
 
-    def test_require_all_with_fallback(self):
+    def test_aao_hns_require_all_with_fallback(self):
         thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0, 4000: 60.0}
-        assert aao_hns_pta(thresholds, require_all=True) == pytest.approx(35.0)
+        assert pta_from_thresholds(thresholds, standard="aao_hns", require_all=True) == pytest.approx(35.0)
 
-    def test_require_all_missing_3000_and_4000(self):
+    def test_aao_hns_require_all_missing_3000_and_4000(self):
         thresholds = {500: 20.0, 1000: 30.0, 2000: 40.0}
-        assert aao_hns_pta(thresholds, require_all=True) is None
+        assert pta_from_thresholds(thresholds, standard="aao_hns", require_all=True) is None
 
-    def test_require_all_missing_base_freq(self):
+    def test_aao_hns_require_all_missing_base_freq(self):
         thresholds = {500: 20.0, 2000: 40.0, 3000: 50.0}
-        assert aao_hns_pta(thresholds, require_all=True) is None
+        assert pta_from_thresholds(thresholds, standard="aao_hns", require_all=True) is None
 
-    def test_empty(self):
-        assert aao_hns_pta({}) is None
+    def test_aao_hns_empty(self):
+        assert pta_from_thresholds({}, standard="aao_hns") is None
+
+    def test_freqs_overrides_standard(self):
+        thresholds = {500: 10.0, 1000: 30.0, 2000: 50.0, 3000: 70.0}
+        result = pta_from_thresholds(thresholds, standard="aao_hns", freqs=(500,))
+        assert result == pytest.approx(10.0)
+
+    def test_invalid_standard_raises(self):
+        with pytest.raises(ValueError, match="Unknown PTA standard"):
+            pta_from_thresholds({500: 20.0}, standard="bogus")
+
+    def test_pta_standards_dict(self):
+        assert "3tone" in PTA_STANDARDS
+        assert "4tone" in PTA_STANDARDS
+        assert PTA_STANDARDS["3tone"] == (500, 1000, 2000)
+        assert PTA_STANDARDS["4tone"] == (500, 1000, 2000, 4000)
 
 
 class TestSeverityAAOHNS:
@@ -159,13 +179,14 @@ class TestSeverityAAOHNS:
         # 3000 fallback = avg(40, 60) = 50; PTA = (30+35+40+50)/4 = 38.75 → mild
         assert severity_from_thresholds(thresholds, standard="aao_hns") == "mild"
 
-    def test_freqs_ignored_for_aao_hns(self):
-        thresholds = {500: 30.0, 1000: 35.0, 2000: 40.0, 3000: 45.0}
-        result_custom = severity_from_thresholds(
+    def test_freqs_overrides_aao_hns(self):
+        thresholds = {500: 10.0, 1000: 35.0, 2000: 40.0, 3000: 55.0}
+        result_freqs = severity_from_thresholds(
             thresholds, freqs=(500,), standard="aao_hns",
         )
-        result_default = severity_from_thresholds(thresholds, standard="aao_hns")
-        assert result_custom == result_default
+        assert result_freqs == "normal"
+        result_aao = severity_from_thresholds(thresholds, standard="aao_hns")
+        assert result_aao == "mild"
 
     def test_invalid_standard_raises(self):
         with pytest.raises(ValueError, match="Unknown standard"):
