@@ -1,7 +1,7 @@
 """Tests for summary metric registry and compute_summary."""
 import pytest
 
-from audiogram_object import (
+from audiogram import (
     EarAudiogram, BinauralAudiogram, WordRecognitionScore,
     register_summary_metric, unregister_summary_metric, SUMMARY_METRICS,
 )
@@ -51,7 +51,7 @@ class TestSummaryBasic:
 
     def test_summary_has_all_asymmetry_criteria(self, simple_ba):
         s = simple_ba.summary()
-        from audiogram_object.asymmetry import ASYMMETRY_CRITERIA
+        from audiogram.asymmetry import ASYMMETRY_CRITERIA
         for name in ASYMMETRY_CRITERIA:
             assert f"asymmetric_{name}" in s
 

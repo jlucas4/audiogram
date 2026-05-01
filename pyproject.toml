@@ -1,5 +1,5 @@
 [project]
-name = "audiogram-object"
+name = "audiogram"
 version = "0.1.0"
 description = "The Audiogram as a Python Object - utilities for creating python representations of clinical audiometric data"
 authors = [
@@ -22,15 +22,15 @@ classifiers = [
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/jlucas4/audiogram-object"
-Repository = "https://github.com/jlucas4/audiogram-object"
-Issues = "https://github.com/jlucas4/audiogram-object/issues"
+Homepage = "https://github.com/jlucas4/audiogram"
+Repository = "https://github.com/jlucas4/audiogram"
+Issues = "https://github.com/jlucas4/audiogram/issues"
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.7,<4.0.0", "numpy>=1.24"]
 
 [tool.poetry]
-packages = [{include = "audiogram_object", from = "src"}]
+packages = [{include = "audiogram", from = "src"}]
 
 
 [tool.pytest.ini_options]

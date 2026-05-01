@@ -1,22 +1,22 @@
-# audiogram-object
+# audiogram
 
 A Python library for representing clinical audiometric data as typed objects.
 
 Audiograms are structured data — frequencies, thresholds, air and bone conduction, masking,
 no-response flags — but they're routinely stored as flat dictionaries, wide-format CSVs, or
-strings in EMR free-text fields. `audiogram-object` gives them a proper object model with
+strings in EMR free-text fields. `audiogram` gives them a proper object model with
 metrics, asymmetry analysis, serialization, and optional matplotlib plotting.
 
 ## Install
 
 ```bash
-pip install audiogram-object
+pip install audiogram
 ```
 
 With matplotlib plotting support:
 
 ```bash
-pip install audiogram-object[plot]
+pip install audiogram[plot]
 ```
 
 Requires Python 3.11+. No required dependencies for the core library.
@@ -24,7 +24,7 @@ Requires Python 3.11+. No required dependencies for the core library.
 ## Quick start
 
 ```python
-from audiogram_object import ThresholdPoint, EarAudiogram, BinauralAudiogram
+from audiogram import ThresholdPoint, EarAudiogram, BinauralAudiogram
 
 left = EarAudiogram(
     air={
@@ -161,7 +161,7 @@ Grades: `normal` (≤25), `mild` (26–40), `moderate` (41–55), `moderately_se
 ## Asymmetry
 
 ```python
-from audiogram_object import ASYMMETRY_CRITERIA
+from audiogram import ASYMMETRY_CRITERIA
 
 # Named built-in criteria
 ba.is_asymmetric("any_15db")             # any frequency >= 15 dB interaural difference
@@ -229,7 +229,7 @@ Research datasets and EMR exports typically store audiograms in wide format — 
 per audiogram, columns like `R_AC_500`, `L_BC_1K`, etc. Every dataset uses different
 column names.
 
-`audiogram-object` defines a canonical wide column convention and a simple column-mapping
+`audiogram` defines a canonical wide column convention and a simple column-mapping
 workflow so you can ingest any wide dataset with a one-time mapping dict.
 
 ### Canonical wide column convention
@@ -282,7 +282,7 @@ wide_row = ba.to_wide_row()
 ### Helper functions
 
 ```python
-from audiogram_object import wide_column_name, parse_wide_column, canonical_wide_columns
+from audiogram import wide_column_name, parse_wide_column, canonical_wide_columns
 
 wide_column_name("right", "air", 500)           # "r_air_500"
 parse_wide_column("l_bone_1000_masked")          # {"ear": "left", "pathway": "bone", ...}
@@ -327,7 +327,7 @@ for i, row in df.iterrows():
 Register your own metric functions — they automatically appear in `summary()` output.
 
 ```python
-from audiogram_object import register_summary_metric
+from audiogram import register_summary_metric
 
 def hearing_loss_degree(ba):
     ptas = ba.pta()
@@ -349,7 +349,7 @@ ba.summary()  # now includes right_hl_degree, left_hl_degree
 
 ## Plotting
 
-Requires `pip install audiogram-object[plot]`.
+Requires `pip install audiogram[plot]`.
 
 ```python
 # Both ears — clinic-style two-panel layout

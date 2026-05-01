@@ -1,6 +1,6 @@
 import pytest
 
-from audiogram_object import ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram
+from audiogram import ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram
 
 
 @pytest.fixture

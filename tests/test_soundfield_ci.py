@@ -1,7 +1,7 @@
 """Tests for soundfield and cochlear-implant aided thresholds."""
 import pytest
 
-from audiogram_object import (
+from audiogram import (
     ThresholdPoint, EarAudiogram, BinauralAudiogram,
     wide_column_name, parse_wide_column, canonical_wide_columns,
 )

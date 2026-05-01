@@ -1,7 +1,7 @@
 """Tests for wide-format I/O and schema wide column helpers."""
 import pytest
 
-from audiogram_object import (
+from audiogram import (
     ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram,
     wide_column_name, parse_wide_column, canonical_wide_columns, apply_column_map,
     enrich_wide_rows,

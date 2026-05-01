@@ -1,7 +1,7 @@
 """Tests for hearing loss severity grading (WHO 2021, AAO-HNS)."""
 import pytest
 
-from audiogram_object import (
+from audiogram import (
     EarAudiogram, BinauralAudiogram, ThresholdPoint,
     severity_from_pta, severity_from_thresholds, pta_from_thresholds,
     PTA_STANDARDS, SEVERITY_GRADES, VALID_STANDARDS,

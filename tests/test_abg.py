@@ -3,7 +3,7 @@ import warnings
 
 import pytest
 
-from audiogram_object import (
+from audiogram import (
     EarAudiogram,
     BinauralAudiogram,
     ThresholdPoint,

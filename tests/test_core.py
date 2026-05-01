@@ -2,7 +2,7 @@
 import json
 import pytest
 
-from audiogram_object import ThresholdPoint, EarAudiogram, BinauralAudiogram
+from audiogram import ThresholdPoint, EarAudiogram, BinauralAudiogram
 
 
 # ---------------------------------------------------------------------------

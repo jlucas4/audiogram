@@ -1,8 +1,8 @@
 """Tests for schema validation helpers."""
 import pytest
 
-from audiogram_object import validate_long_row, validate_long_rows
-from audiogram_object.schema import (
+from audiogram import validate_long_row, validate_long_rows
+from audiogram.schema import (
     validate_observations_row,
     validate_tests_row,
     validate_ear,

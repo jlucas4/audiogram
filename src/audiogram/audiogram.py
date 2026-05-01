@@ -12,7 +12,7 @@ def _load_plot_module():
         from . import plot_mpl as pm
     except Exception as e:
         raise ImportError(
-            "Plotting requires optional dependencies. Install with: pip install audiogram-object[plot]"
+            "Plotting requires optional dependencies. Install with: pip install audiogram[plot]"
         ) from e
     return pm
 

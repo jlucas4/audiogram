@@ -1,8 +1,8 @@
 """Tests for InterauralDifference and asymmetry criteria."""
 import pytest
 
-from audiogram_object import ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram, ASYMMETRY_CRITERIA
-from audiogram_object.asymmetry import compute_interaural_differences, InterauralDifference
+from audiogram import ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram, ASYMMETRY_CRITERIA
+from audiogram.asymmetry import compute_interaural_differences, InterauralDifference
 
 
 # ---------------------------------------------------------------------------

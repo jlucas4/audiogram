@@ -1,9 +1,9 @@
-"""audiogram-object: typed Python objects for clinical audiometric data."""
+"""audiogram: typed Python objects for clinical audiometric data."""
 
 from importlib.metadata import version, PackageNotFoundError
 
 try:
-    __version__ = version("audiogram-object")
+    __version__ = version("audiogram")
 except PackageNotFoundError:
     __version__ = "0.0.0-dev"
 

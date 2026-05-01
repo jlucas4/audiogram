@@ -1,7 +1,7 @@
 """Tests for speech audiometry: WordRecognitionScore, SRT, SAT, WRS on EarAudiogram."""
 import pytest
 
-from audiogram_object import (
+from audiogram import (
     ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram,
 )
 
