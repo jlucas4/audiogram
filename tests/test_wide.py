@@ -4,6 +4,7 @@ import pytest
 from audiogram_object import (
     ThresholdPoint, WordRecognitionScore, EarAudiogram, BinauralAudiogram,
     wide_column_name, parse_wide_column, canonical_wide_columns, apply_column_map,
+    enrich_wide_rows,
 )
 
 
@@ -259,3 +260,65 @@ class TestWideSpeech:
         assert len(restored.left.wrs) == 2
         assert restored.right.sat == 45.0
         assert restored.right.wrs[0].masked is True
+
+
+class TestEnrichWideRows:
+    def _make_rows(self):
+        return [
+            {"r_air_500": 25.0, "r_air_1000": 30.0, "r_air_2000": 35.0,
+             "l_air_500": 20.0, "l_air_1000": 25.0, "l_air_2000": 30.0,
+             "subject_id": "pt-1"},
+            {"r_air_500": 40.0, "r_air_1000": 45.0, "r_air_2000": 50.0,
+             "l_air_500": 35.0, "l_air_1000": 40.0, "l_air_2000": 45.0,
+             "subject_id": "pt-2"},
+        ]
+
+    def test_returns_list_of_dicts(self):
+        result = enrich_wide_rows(self._make_rows())
+        assert isinstance(result, list)
+        assert all(isinstance(r, dict) for r in result)
+
+    def test_original_data_preserved(self):
+        result = enrich_wide_rows(self._make_rows())
+        assert result[0]["subject_id"] == "pt-1"
+        assert result[0]["r_air_500"] == 25.0
+
+    def test_metrics_merged(self):
+        result = enrich_wide_rows(self._make_rows())
+        assert "pta_left" in result[0]
+        assert "pta_right" in result[0]
+
+    def test_pta_values_correct(self):
+        result = enrich_wide_rows(self._make_rows())
+        assert result[0]["pta_right"] == pytest.approx(30.0)
+        assert result[0]["pta_left"] == pytest.approx(25.0)
+
+    def test_include_filter(self):
+        result = enrich_wide_rows(self._make_rows(), include=["pta"])
+        assert "pta_left" in result[0]
+        assert "left_severity" not in result[0]
+
+    def test_exclude_filter(self):
+        result = enrich_wide_rows(self._make_rows(), exclude=["asymmetry"])
+        assert "pta_left" in result[0]
+        for key in result[0]:
+            assert "asymmetry" not in key.lower() or key in ("subject_id",)
+
+    def test_standard_kwarg(self):
+        result = enrich_wide_rows(self._make_rows(), standard="aao_hns")
+        assert "pta_left" in result[0]
+
+    def test_column_map(self):
+        rows = [{"R_AC_500": 25.0, "R_AC_1K": 30.0, "R_AC_2K": 35.0}]
+        col_map = {"R_AC_500": "r_air_500", "R_AC_1K": "r_air_1000", "R_AC_2K": "r_air_2000"}
+        result = enrich_wide_rows(rows, column_map=col_map)
+        assert "pta_right" in result[0]
+        assert result[0]["pta_right"] == pytest.approx(30.0)
+
+    def test_empty_input(self):
+        assert enrich_wide_rows([]) == []
+
+    def test_via_classmethod(self):
+        result = BinauralAudiogram.enrich_wide_rows(self._make_rows())
+        assert len(result) == 2
+        assert "pta_left" in result[0]

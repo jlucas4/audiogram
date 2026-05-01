@@ -9,6 +9,11 @@ if TYPE_CHECKING:
     from .audiogram import EarAudiogram, BinauralAudiogram
 
 
+def _load_metrics_module():
+    from . import metrics as m
+    return m
+
+
 def _load_schema_module():
     from . import schema as s
     return s
@@ -554,3 +559,45 @@ def from_wide_row(
         performed_at=meta_date,
         source=meta_src,
     )
+
+
+# ---------------------------------------------------------------------------
+# Batch enrichment
+# ---------------------------------------------------------------------------
+
+def enrich_wide_rows(
+    rows: Iterable[dict[str, Any]],
+    column_map: dict[str, str] | None = None,
+    *,
+    include: Iterable[str] | None = None,
+    exclude: Iterable[str] | None = None,
+    **kwargs: Any,
+) -> list[dict[str, Any]]:
+    """Parse wide-format rows and merge computed summary metrics onto each row.
+
+    Parameters
+    ----------
+    rows
+        Wide-format dicts (one per audiogram).
+    column_map
+        One-time mapping from your column names to canonical wide columns.
+    include
+        If provided, only compute these summary categories.
+    exclude
+        If provided, skip these summary categories.
+    **kwargs
+        Forwarded to summary (e.g. ``standard="aao_hns"``).
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        Original row data merged with computed metrics — ready for
+        ``pd.DataFrame(result)`` or ``pl.DataFrame(result)``.
+    """
+    m = _load_metrics_module()
+    result = []
+    for row in rows:
+        ba = from_wide_row(row, column_map)
+        summary = m.compute_summary(ba, include=include, exclude=exclude, **kwargs)
+        result.append({**row, **summary})
+    return result

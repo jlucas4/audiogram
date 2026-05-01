@@ -607,6 +607,14 @@ class BinauralAudiogram:
         """Construct from a single wide-format row."""
         return _serialization.from_wide_row(row, column_map, audiogram_id=audiogram_id, subject_id=subject_id, performed_at=performed_at, source=source)
 
+    @staticmethod
+    def enrich_wide_rows(rows: Iterable[dict[str, Any]], column_map: dict[str, str] | None = None, *, include: Iterable[str] | None = None, exclude: Iterable[str] | None = None, **kwargs: Any) -> list[dict[str, Any]]:
+        """Parse wide-format rows and merge computed summary metrics onto each.
+
+        Returns a list of dicts ready for ``pd.DataFrame()`` or ``pl.DataFrame()``.
+        """
+        return _serialization.enrich_wide_rows(rows, column_map, include=include, exclude=exclude, **kwargs)
+
     def to_dict(self) -> dict[str, Any]:
         return _serialization.binaural_to_dict(self)
 

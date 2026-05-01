@@ -30,6 +30,7 @@ from .metrics import (
     SEVERITY_GRADES,
     VALID_STANDARDS,
 )
+from .serialization import enrich_wide_rows
 from .schema import (
     AUDIOGRAM_ID,
     SUBJECT_ID,
@@ -97,6 +98,8 @@ __all__ = [
     "parse_wide_column",
     "canonical_wide_columns",
     "apply_column_map",
+    # Batch enrichment
+    "enrich_wide_rows",
     # Asymmetry
     "InterauralDifference",
     "ASYMMETRY_CRITERIA",
