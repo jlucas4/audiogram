@@ -133,3 +133,66 @@ class TestGoldenGeometry:
                 == spec["sizing"]["air_size_pt"])
         assert (spec["symbols"]["bone_right_unmasked"]["size_pt"]
                 == spec["sizing"]["bone_size_pt"])
+
+    def test_lines_policy(self):
+        spec = build_plot_spec()
+        assert spec["lines"]["connect_air"] is True
+        assert spec["lines"]["air_nr_breaks_line"] is True
+        assert spec["lines"]["connect_bone"] is False
+
+
+class TestNoMatplotlibDependency:
+    def test_spec_builds_without_matplotlib(self):
+        """The plot spec must be buildable in a process that never imports
+        Matplotlib — this is what lets the API serve it without the plotting
+        backend. Runs in a subprocess with matplotlib import blocked."""
+        import subprocess
+        import sys
+        code = (
+            "import builtins;_i=builtins.__import__\n"
+            "def g(n,*a,**k):\n"
+            " if n.split('.')[0]=='matplotlib': raise ImportError('blocked')\n"
+            " return _i(n,*a,**k)\n"
+            "builtins.__import__=g\n"
+            "from audiogram.plot_spec import build_plot_spec\n"
+            "s=build_plot_spec('mei')\n"
+            "assert len(s['symbols'])==16 and s['axes']['ylim']==[125.0,-20.0]\n"
+            "print('ok')\n"
+        )
+        r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+        assert "ok" in r.stdout
+
+
+class TestAirLineSegments:
+    """NR breaks the air line: T1-T2-NR-T3-T4 -> [[T1,T2],[T3,T4]]."""
+
+    def _segs(self, items, nr):
+        from audiogram.canvas import air_line_segments
+        return [[f for f, _ in seg] for seg in air_line_segments(items, set(nr))]
+
+    def test_nr_splits_into_two_segments(self):
+        items = [(250, 10), (500, 15), (1000, 40), (2000, 45), (4000, 50)]
+        assert self._segs(items, {1000}) == [[250, 500], [2000, 4000]]
+
+    def test_no_nr_is_one_segment(self):
+        items = [(250, 10), (500, 15), (1000, 40)]
+        assert self._segs(items, set()) == [[250, 500, 1000]]
+
+    def test_nr_point_is_not_in_any_segment(self):
+        items = [(250, 10), (500, 15), (1000, 40)]
+        segs = self._segs(items, {500})
+        assert 500 not in [f for seg in segs for f in seg]
+        assert segs == [[250], [1000]]  # single-point segments (no line drawn)
+
+    def test_consecutive_nr(self):
+        items = [(250, 10), (500, 15), (1000, 40), (2000, 45)]
+        assert self._segs(items, {500, 1000}) == [[250], [2000]]
+
+    def test_leading_and_trailing_nr(self):
+        items = [(250, 10), (500, 15), (1000, 40)]
+        assert self._segs(items, {250, 1000}) == [[500]]
+
+    def test_unsorted_input_is_ordered(self):
+        items = [(4000, 50), (250, 10), (1000, 40), (500, 15)]
+        assert self._segs(items, {1000}) == [[250, 500], [4000]]

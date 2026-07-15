@@ -38,13 +38,13 @@ from typing import Any
 import numpy as np
 
 from . import symbols as sym
-from .plot_mpl import (
+from .canvas import (
     AXES_PRESETS,
     PLOT_STYLE_PRESETS,
     get_plot_style,
 )
 
-PLOT_SPEC_VERSION = "1.0"
+PLOT_SPEC_VERSION = "1.1"
 
 # Glyph-key semantics (mirrors the table at the bottom of symbols.py).
 SYMBOL_SEMANTICS: dict[str, dict[str, dict[str, str]]] = {
@@ -180,11 +180,13 @@ def build_plot_spec(
                    "fontweight": st.text_marker_fontweight},
         },
         "lines": {
-            # Mirrors plot_mpl.plot_ear: air points connect in frequency order
-            # excluding NR; bone symbols are never connected; text-marker
+            # Mirrors plot_mpl.plot_ear. Air points connect in frequency order,
+            # but an NR (no-response) BREAKS the line: neighbours on opposite
+            # sides of an NR are not connected across it, and the NR symbol
+            # floats unconnected. Bone symbols are never connected; text-marker
             # series (S/CI) connect all points.
             "connect_air": True,
-            "connect_air_excludes_nr": True,
+            "air_nr_breaks_line": True,
             "connect_bone": False,
             "connect_text_markers": True,
         },

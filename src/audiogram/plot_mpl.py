@@ -13,7 +13,6 @@ Geometry lives in `symbols.py`. Low-level drawing lives in `render_mpl.py`.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Iterable, Mapping, Sequence
 
 import numpy as np
@@ -22,167 +21,22 @@ import matplotlib.pyplot as plt
 from . import symbols as sym
 from . import render_mpl as rm
 
-
-@dataclass(frozen=True)
-class AudiogramAxesConfig:
-    """Axes/canvas settings for an audiogram plot (Matplotlib)."""
-
-    # Data domain
-    xlim: tuple[float, float] = (200.0, 10000.0)
-    ylim: tuple[float, float] = (120.0, -10.0)  # inverted y
-
-    # Frequency ticks
-    xticks: tuple[int, ...] = (250, 500, 1000, 2000, 4000, 8000)
-    xtick_labels: tuple[str, ...] = ("250", "500", "1000", "2000", "4000", "8000")
-
-    # dB ticks
-    yticks: tuple[int, ...] = tuple(range(-10, 121, 10))
-
-    # Label placement (clinical style)
-    x_label: str = "Frequency (Hz)"
-    y_label: str = "Hearing Level (dB HL)"
-    top_x_ticks: bool = True
-    right_y_ticks: bool = False
-    show_x_minor_ticks: bool = False
-
-    # Grid
-    show_vlines: bool = True
-    vline_alpha: float = 0.25
-    vline_lw: float = 1.0
-
-    show_y_grid: bool = True
-    y_grid_ls: str = "--"
-    y_grid_alpha: float = 0.35
-
-    # Shaded background bands (y0, y1, facecolor, alpha)
-    shade_bands: tuple[tuple[float, float, str, float], ...] = ()
-
-    # Tick label rotation for ultra-high frequencies (e.g., 10k+)
-    angled_xticks_from: int | None = None  # rotate tick labels for ticks >= this value
-    angled_xtick_rotation: float = 45.0
-    angled_xtick_ha: str = "left"
-
-    # Optional two-tier horizontal grid styling
-    y_grid_major_every: int | None = 20
-    y_grid_major_lw: float = 1.2
-    y_grid_minor_lw: float = 0.8
-    y_grid_major_alpha: float = 0.55
-    y_grid_minor_alpha: float = 0.35
-
-
-@dataclass(frozen=True)
-class AudiogramPlotStyle:
-    """High-level plot style preset (axes + palette + default figure size)."""
-
-    axes: AudiogramAxesConfig
-    figsize: tuple[float, float] = (7.5, 5.5)
-    color_right: str = "red"
-    color_left: str = "blue"
-    color_soundfield: str = "#2ca02c"
-    text_marker_fontsize: float = 15.0
-    text_marker_fontweight: str = "bold"
-
-
-# --- Presets ---
-
-ANSI_BASE = AudiogramAxesConfig(
-    ylim=(125.0, -10.0),
+# Canvas geometry lives in the backend-neutral `canvas` module so the plot-spec
+# exporter can build it without importing Matplotlib. Re-exported here so
+# existing `audiogram.plot_mpl.<name>` imports keep working.
+from .canvas import (  # noqa: F401
+    AudiogramAxesConfig,
+    AudiogramPlotStyle,
+    ANSI_BASE,
+    EHF,
+    MEI_BASE,
+    AXES_PRESETS,
+    PLOT_STYLE_PRESETS,
+    DEFAULT_PLOT_STYLE,
+    get_axes_preset,
+    get_plot_style,
+    air_line_segments,
 )
-
-# Extended high-frequency supplemental panel (8k–20k)
-EHF = AudiogramAxesConfig(
-    xlim=(7000.0, 22000.0),
-    ylim=(125.0, -10.0),
-    xticks=(8000, 10000, 11200, 12500, 14000, 16000, 18000, 20000),
-    xtick_labels=("8000", "10000", "11200", "12500", "14000", "16000", "18000", "20000"),
-)
-
-# Michigan Ear Institute-like canvas: stronger grid, shaded upper band, angled UHF labels
-MEI_BASE = AudiogramAxesConfig(
-    xlim=(110.0, 20000.0),
-    ylim=(125.0, -20.0),
-    xticks=(125, 250, 500, 1000, 2000, 4000, 8000, 10000, 12500, 14000, 16000),
-    xtick_labels=("125", "250", "500", "1000", "2000", "4000", "8000", "10000", "12500", "14000", "16000"),
-    yticks=tuple(range(-20, 121, 10)),
-    right_y_ticks=False,
-    shade_bands=((-10.0, 25.0, "#dbe9f6", 0.55),),
-    angled_xticks_from=10000,
-    angled_xtick_rotation=55.0,
-    angled_xtick_ha="left",
-    y_grid_ls="-",
-    y_grid_major_every=20,
-    y_grid_major_lw=1.4,
-    y_grid_minor_lw=0.7,
-    y_grid_major_alpha=0.50,
-    y_grid_minor_alpha=0.25,
-    show_vlines=True,
-    vline_alpha=0.30,
-    vline_lw=0.9,
-)
-
-AXES_PRESETS: dict[str, AudiogramAxesConfig] = {
-    "ansi": ANSI_BASE,
-    "ehf": EHF,
-    "mei": MEI_BASE,
-}
-
-# Add aliases
-AXES_PRESETS["standard"] = ANSI_BASE
-AXES_PRESETS["michigan"] = MEI_BASE
-
-
-def get_axes_preset(preset: str | AudiogramAxesConfig | None) -> AudiogramAxesConfig:
-    if preset is None:
-        return ANSI_BASE
-    if isinstance(preset, AudiogramAxesConfig):
-        return preset
-    key = preset.lower().strip()
-    if key not in AXES_PRESETS:
-        raise KeyError(f"Unknown axes preset '{preset}'. Options: {sorted(AXES_PRESETS)}")
-    return AXES_PRESETS[key]
-
-
-# --- Plot style presets (axes + palette + default figsize) ---
-
-PLOT_STYLE_PRESETS: dict[str, AudiogramPlotStyle] = {
-    "ansi": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(7.5, 5.5), color_right="red", color_left="blue"),
-
-    # Black & white: use grayscale palette; glyphs still encode laterality.
-    "ansi_bw": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(7.5, 5.5), color_right="black", color_left="0.35"),
-
-    # Figure-size variants
-    "ansi_small": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(4.2, 3.2), color_right="red", color_left="blue"),
-    "ansi_large": AudiogramPlotStyle(axes=ANSI_BASE, figsize=(12.0, 8.0), color_right="red", color_left="blue"),
-
-    # Extended high-frequency supplemental
-    "ehf": AudiogramPlotStyle(axes=EHF, figsize=(7.5, 5.5), color_right="red", color_left="blue"),
-
-    # MEI styles
-    "mei": AudiogramPlotStyle(axes=MEI_BASE, figsize=(9.0, 5.5), color_right="red", color_left="blue"),
-    "mei_bw": AudiogramPlotStyle(axes=MEI_BASE, figsize=(9.0, 5.5), color_right="black", color_left="0.35"),
-}
-
-# Convenience aliases
-PLOT_STYLE_PRESETS["standard"] = PLOT_STYLE_PRESETS["ansi"]
-PLOT_STYLE_PRESETS["bw"] = PLOT_STYLE_PRESETS["ansi_bw"]
-PLOT_STYLE_PRESETS["small"] = PLOT_STYLE_PRESETS["ansi_small"]
-PLOT_STYLE_PRESETS["large"] = PLOT_STYLE_PRESETS["ansi_large"]
-PLOT_STYLE_PRESETS["michigan"] = PLOT_STYLE_PRESETS["mei"]
-PLOT_STYLE_PRESETS["mei-bw"] = PLOT_STYLE_PRESETS["mei_bw"]
-
-
-DEFAULT_PLOT_STYLE = PLOT_STYLE_PRESETS["ansi"]
-
-
-def get_plot_style(style: str | AudiogramPlotStyle | None) -> AudiogramPlotStyle:
-    if style is None:
-        return DEFAULT_PLOT_STYLE
-    if isinstance(style, AudiogramPlotStyle):
-        return style
-    key = style.lower().strip()
-    if key not in PLOT_STYLE_PRESETS:
-        raise KeyError(f"Unknown plot style '{style}'. Options: {sorted(PLOT_STYLE_PRESETS)}")
-    return PLOT_STYLE_PRESETS[key]
 
 
 def setup_audiogram_axes(
@@ -549,17 +403,19 @@ def plot_ear(
     air_items = _as_sorted_pairs(thresholds)
 
     if show_air:
-        connectable = [(f, y) for f, y in air_items if f not in nr_set]
-        if len(connectable) > 1:
-            xs = [float(f) for f, y in connectable]
-            ys = [float(y) for f, y in connectable]
-            ax.plot(
-                xs, ys,
-                color=color,
-                linewidth=cfg.style.linewidth,
-                zorder=zorder_air - 1,
-                solid_capstyle="round",
-            )
+        # An NR breaks the air line: neighbours on opposite sides of an NR are
+        # NOT connected across it (the line splits into segments, and the NR
+        # symbol floats unconnected). See canvas.air_line_segments.
+        for seg in air_line_segments(air_items, nr_set):
+            if len(seg) > 1:
+                ax.plot(
+                    [float(f) for f, _ in seg],
+                    [float(y) for _, y in seg],
+                    color=color,
+                    linewidth=cfg.style.linewidth,
+                    zorder=zorder_air - 1,
+                    solid_capstyle="round",
+                )
 
         for f, y in air_items:
             s = sym.get_symbol(kind="air", ear=ear, masked=(f in masked_set), nr=(f in nr_set), cfg=cfg)

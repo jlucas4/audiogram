@@ -1,6 +1,6 @@
 [project]
 name = "audiogram"
-version = "0.2.0"
+version = "0.3.0"
 description = "The Audiogram as a Python Object - utilities for creating python representations of clinical audiometric data"
 authors = [
     {name = "Jacob Lucas", email = "jake.lucas.ent@gmail.com"}
