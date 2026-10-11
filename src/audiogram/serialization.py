@@ -44,6 +44,8 @@ def ear_to_dict(ear: EarAudiogram) -> dict[str, Any]:
         d["sat"] = ear.sat
     if ear.wrs:
         d["wrs"] = [w.to_dict() for w in ear.wrs]
+    if ear.tested is not None:
+        d["tested"] = ear.tested
     return d
 
 
@@ -70,6 +72,7 @@ def ear_from_dict(data: dict[str, Any]) -> EarAudiogram:
         srt=data.get("srt"),
         sat=data.get("sat"),
         wrs=wrs,
+        tested=data.get("tested"),
     )
 
 

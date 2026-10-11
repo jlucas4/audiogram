@@ -73,6 +73,13 @@ class AudiogramPlotStyle:
     color_soundfield: str = "#2ca02c"
     text_marker_fontsize: float = 15.0
     text_marker_fontweight: str = "bold"
+    # DNT (did-not-test) panel marker: large all-caps word across the panel, rotated
+    # counter-clockwise, in the ear's colour, faint — drawn when ear.tested is False.
+    dnt_label: str = "DNT"
+    dnt_rotation: float = 45.0          # degrees, counter-clockwise
+    dnt_alpha: float = 0.18
+    dnt_fontweight: str = "bold"
+    dnt_fill_fraction: float = 0.42     # font size = this fraction of the panel's shorter side
 
 
 # --- Presets ---

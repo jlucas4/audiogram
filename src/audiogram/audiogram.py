@@ -116,8 +116,13 @@ class EarAudiogram:
         srt: float | None = None,
         sat: float | None = None,
         wrs: list[WordRecognitionScore] | None = None,
+        tested: bool | None = None,
     ):
         self.air: dict[int, ThresholdPoint] = _coerce_thresholds(air)
+        # Tri-state: None = not stated (the default; legacy and hand-entered records),
+        # False = the ear was not tested (DNT/CNT), True = tested. Absence must never be
+        # read as "not tested" — only an explicit False means that.
+        self.tested: bool | None = None if tested is None else bool(tested)
         self.bone: dict[int, ThresholdPoint] = _coerce_thresholds(bone)
         self.soundfield: dict[int, ThresholdPoint] = _coerce_thresholds(soundfield)
         self.ci: dict[int, ThresholdPoint] = _coerce_thresholds(ci)
@@ -137,6 +142,8 @@ class EarAudiogram:
             parts.append(f"soundfield={sorted(self.soundfield)}")
         if self.ci:
             parts.append(f"ci={sorted(self.ci)}")
+        if self.tested is not None:
+            parts.append(f"tested={self.tested}")
         if self.srt is not None:
             parts.append(f"srt={self.srt}")
         if self.sat is not None:

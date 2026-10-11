@@ -44,7 +44,7 @@ from .canvas import (
     get_plot_style,
 )
 
-PLOT_SPEC_VERSION = "1.1"
+PLOT_SPEC_VERSION = "1.2"   # 1.2: dnt_marker + semantics.dnt
 
 # Glyph-key semantics (mirrors the table at the bottom of symbols.py).
 SYMBOL_SEMANTICS: dict[str, dict[str, dict[str, str]]] = {
@@ -179,6 +179,19 @@ def build_plot_spec(
             "ci": {"label": "CI", "fontsize": st.text_marker_fontsize,
                    "fontweight": st.text_marker_fontweight},
         },
+        "dnt_marker": {
+            # Drawn across an ear's panel when ear.tested is False (did not test):
+            # the label, all caps, rotated counter-clockwise, sized to fill the
+            # panel's shorter side, in the ear's colour at this alpha.
+            "label": st.dnt_label,
+            "rotation_deg": st.dnt_rotation,
+            "rotation_sense": "counter-clockwise",
+            "alpha": st.dnt_alpha,
+            "fontweight": st.dnt_fontweight,
+            "fill_fraction": st.dnt_fill_fraction,
+            "color": "ear",
+            "when": "ear.tested is False",
+        },
         "lines": {
             # Mirrors plot_mpl.plot_ear. Air points connect in frequency order,
             # but an NR (no-response) BREAKS the line: neighbours on opposite
@@ -193,5 +206,8 @@ def build_plot_spec(
         "semantics": {
             "glyphs": SYMBOL_SEMANTICS,
             "nr_arrow_direction": {"right": "down-left", "left": "down-right"},
+            "dnt": "ear.tested is tri-state: None = not stated, True = tested, False = did not "
+                   "test (DNT/CNT). Only False means not tested; renderers draw dnt_marker "
+                   "across that panel and expect no thresholds there.",
         },
     }

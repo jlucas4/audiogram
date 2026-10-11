@@ -171,6 +171,8 @@ def plot_binaural_two_panel(
     soundfield_color: str | None = None,
     left_ci: Mapping[int, float] | None = None,
     right_ci: Mapping[int, float] | None = None,
+    left_dnt: bool = False,
+    right_dnt: bool = False,
     sharey: bool = True,
     show_ylabel_right: bool = True,
     show_yticks_both: bool = True,
@@ -259,6 +261,7 @@ def plot_binaural_two_panel(
     # Plot right ear on LEFT panel
     plot_ear(
         ax_r, right, ear="right", cfg=cfg,
+        dnt=right_dnt, dnt_style=st,
         show_air=show_air,
         masked_freqs=right_masked, nr_freqs=right_nr, color=color_r,
         show_bone=show_bone, bone_thresholds=right_bone,
@@ -271,6 +274,7 @@ def plot_binaural_two_panel(
     # Plot left ear on RIGHT panel
     plot_ear(
         ax_l, left, ear="left", cfg=cfg,
+        dnt=left_dnt, dnt_style=st,
         show_air=show_air,
         masked_freqs=left_masked, nr_freqs=left_nr, color=color_l,
         show_bone=show_bone, bone_thresholds=left_bone,
@@ -342,6 +346,30 @@ def _plot_text_series(
         )
 
 
+def draw_dnt_marker(
+    ax: plt.Axes,
+    *,
+    color: str = "0.35",
+    style: str | AudiogramPlotStyle | None = None,
+    zorder: int = 2,
+):
+    """Draw the DNT (did-not-test) marker across a panel: the style's label (default
+    "DNT"), all caps, rotated counter-clockwise, sized to fill the panel, in `color` at
+    the style's alpha. Call for an ear whose ``tested`` is False."""
+    st = get_plot_style(style)
+    fig = ax.figure
+    pos = ax.get_position()
+    w_px = pos.width * fig.get_figwidth() * fig.dpi
+    h_px = pos.height * fig.get_figheight() * fig.dpi
+    size_pt = max(6.0, min(w_px, h_px) * 72.0 / fig.dpi * st.dnt_fill_fraction)
+    return ax.text(
+        0.5, 0.5, st.dnt_label, transform=ax.transAxes,
+        ha="center", va="center", rotation=st.dnt_rotation, rotation_mode="anchor",
+        fontsize=size_pt, fontweight=st.dnt_fontweight, color=color, alpha=st.dnt_alpha,
+        zorder=zorder, clip_on=True,
+    )
+
+
 def plot_ear(
     ax: plt.Axes,
     thresholds: Mapping[int, float] | Sequence[tuple[int, float]],
@@ -364,6 +392,8 @@ def plot_ear(
     ci_color: str | None = None,
     text_marker_fontsize: float = 9.0,
     text_marker_fontweight: str = "bold",
+    dnt: bool = False,
+    dnt_style: str | AudiogramPlotStyle | None = None,
 ):
     """Plot one ear worth of thresholds onto an already-configured audiogram axes.
 
@@ -396,6 +426,8 @@ def plot_ear(
 
     if color is None:
         color = "blue" if ear == "left" else "red"
+    if dnt:
+        draw_dnt_marker(ax, color=color, style=dnt_style)
 
     masked_set = set(int(f) for f in masked_freqs)
     nr_set = set(int(f) for f in nr_freqs)
@@ -480,6 +512,8 @@ def plot_binaural(
     soundfield_color: str | None = None,
     left_ci: Mapping[int, float] | None = None,
     right_ci: Mapping[int, float] | None = None,
+    left_dnt: bool = False,
+    right_dnt: bool = False,
 ) -> tuple[plt.Figure, plt.Axes]:
     """Create a canvas and plot left+right thresholds on a single axes."""
     st = get_plot_style(style)
@@ -506,6 +540,7 @@ def plot_binaural(
 
     plot_ear(
         ax, right, ear="right", cfg=cfg,
+        dnt=right_dnt, dnt_style=st,
         show_air=show_air,
         masked_freqs=right_masked, nr_freqs=right_nr, color=color_r,
         show_bone=show_bone, bone_thresholds=right_bone,
@@ -516,6 +551,7 @@ def plot_binaural(
     )
     plot_ear(
         ax, left, ear="left", cfg=cfg,
+        dnt=left_dnt, dnt_style=st,
         show_air=show_air,
         masked_freqs=left_masked, nr_freqs=left_nr, color=color_l,
         show_bone=show_bone, bone_thresholds=left_bone,
